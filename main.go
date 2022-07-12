@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cybercryptio/d1-gorm/migration"
+
 	d1client "github.com/cybercryptio/d1-client-go/d1-generic"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/schema"
@@ -45,6 +47,9 @@ func main() {
 		fmt.Println("Error creating DB:", err)
 		os.Exit(1)
 	}
+
+	migration.TryMigrate(db.DB)
+	return
 
 	db.AutoMigrate(&Person{})
 
