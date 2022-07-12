@@ -35,6 +35,8 @@ func (c D1Cryptor) Value(ctx context.Context, field *schema.Field, dst reflect.V
 			return nil, err
 		}
 		return base64.StdEncoding.EncodeToString(encryptedValue), nil
+	case nil:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("encryption of type %#v is not supported; only string and []byte are supported", value)
 	}
@@ -52,6 +54,9 @@ func (c D1Cryptor) Scan(ctx context.Context, field *schema.Field, dst reflect.Va
 		if err != nil {
 			return err
 		}
+	case nil:
+		field.Set(ctx, dst, nil)
+		return nil
 	default:
 		return fmt.Errorf("decryption of type %#v is not supported; only string and []byte are supported", value)
 	}
