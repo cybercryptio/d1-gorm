@@ -1,4 +1,4 @@
-module d1-gorm
+module github.com/cybercryptio/d1-gorm
 
 go 1.18
 
