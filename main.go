@@ -48,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	migration.TryMigrate(db.DB)
+	migration.ExampleMigrate(db.DB)
 	return
 
 	db.AutoMigrate(&Person{})
