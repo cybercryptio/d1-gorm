@@ -1,30 +1,15 @@
 package d1gorm
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	"github.com/cybercryptio/d1-gorm/testutil"
 )
-
-type CryptorMock struct {
-	mock.Mock
-}
-
-func (m *CryptorMock) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	args := m.Called(ctx, plaintext)
-	return args.Get(0).([]byte), args.Error(1)
-}
-
-func (m *CryptorMock) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, error) {
-	args := m.Called(ctx, ciphertext)
-	return args.Get(0).([]byte), args.Error(1)
-}
 
 func TestSerializerString(t *testing.T) {
 	type PersonString struct {
@@ -36,18 +21,17 @@ func TestSerializerString(t *testing.T) {
 	lastName := "Doe"
 	encryptedLastName := "Doencrypt"
 
-	cryptor := &CryptorMock{}
+	cryptor := &testutil.CryptorMock{}
 	cryptor.On("Encrypt", mock.Anything, []byte(lastName)).Once().Return([]byte(encryptedLastName), nil)
 	cryptor.On("Decrypt", mock.Anything, []byte(encryptedLastName)).Once().Return([]byte(lastName), nil)
 
 	d1Serializer := NewD1Serializer(cryptor)
 	schema.RegisterSerializer("D1", d1Serializer)
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	assert.Nil(t, err)
+	db := testutil.NewTestDB(t)
 	db.AutoMigrate(&PersonString{})
 
-	err = db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonString{}
@@ -71,18 +55,17 @@ func TestSerializerBytes(t *testing.T) {
 	lastName := []byte("Doe")
 	encryptedLastName := []byte("Doencrypt")
 
-	cryptor := &CryptorMock{}
+	cryptor := &testutil.CryptorMock{}
 	cryptor.On("Encrypt", mock.Anything, lastName).Once().Return(encryptedLastName, nil)
 	cryptor.On("Decrypt", mock.Anything, encryptedLastName).Once().Return(lastName, nil)
 
 	d1Serializer := NewD1Serializer(cryptor)
 	schema.RegisterSerializer("D1", d1Serializer)
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	assert.Nil(t, err)
+	db := testutil.NewTestDB(t)
 	db.AutoMigrate(&PersonBytes{})
 
-	err = db.Create(&PersonBytes{FirstName: firstName, LastName: lastName}).Error
+	err := db.Create(&PersonBytes{FirstName: firstName, LastName: lastName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonBytes{}
@@ -104,16 +87,15 @@ func TestSerializerNil(t *testing.T) {
 
 	firstName := "John"
 
-	cryptor := &CryptorMock{}
+	cryptor := &testutil.CryptorMock{}
 
 	d1Serializer := NewD1Serializer(cryptor)
 	schema.RegisterSerializer("D1", d1Serializer)
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	assert.Nil(t, err)
+	db := testutil.NewTestDB(t)
 	db.AutoMigrate(&PersonBytes{})
 
-	err = db.Create(&PersonBytes{FirstName: firstName}).Error
+	err := db.Create(&PersonBytes{FirstName: firstName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonBytes{}
@@ -131,8 +113,7 @@ func TestSerializerUnsupported(t *testing.T) {
 	firstName1 := "John"
 	firstName2 := "Henry"
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	assert.Nil(t, err)
+	db := testutil.NewTestDB(t)
 
 	{
 		type PersonAge struct {
@@ -142,7 +123,7 @@ func TestSerializerUnsupported(t *testing.T) {
 
 		db.AutoMigrate(&PersonAge{})
 
-		err = db.Create(&PersonAge{FirstName: firstName1, Age: 30}).Error
+		err := db.Create(&PersonAge{FirstName: firstName1, Age: 30}).Error
 		assert.Nil(t, err)
 	}
 
@@ -152,14 +133,14 @@ func TestSerializerUnsupported(t *testing.T) {
 			Age       int `gorm:"serializer:D1"`
 		}
 
-		cryptor := &CryptorMock{}
+		cryptor := &testutil.CryptorMock{}
 
 		d1Serializer := NewD1Serializer(cryptor)
 		schema.RegisterSerializer("D1", d1Serializer)
 
 		db.AutoMigrate(&PersonAge{})
 
-		err = db.Create(&PersonAge{FirstName: firstName2, Age: 30}).Error
+		err := db.Create(&PersonAge{FirstName: firstName2, Age: 30}).Error
 		assert.ErrorContains(t, err, ErrEncryptUnsupported.Error())
 
 		p := &PersonAge{}
