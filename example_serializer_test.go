@@ -40,17 +40,17 @@ func Example() {
 	// Instantiate the D1Serializer with a Cryptor that uses the created client
 	d1Serializer := d1gorm.NewD1Serializer(encrypt.NewD1Cryptor(client))
 
-	// Register the D1Cryptor as a serializer for your database schema
+	// Register the D1Serializer to be used for your database schema
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	// Create a connection to your database
-	db, err := gorm.Open(sqlite.Open("./gorm.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	db.AutoMigrate(&Person{})
 
-	// Now all the created Persons will have their fields marked with "serializer:D1" encrypted before being written to the database
+	// Now all the created Persons will have their fields tagged with "serializer:D1" encrypted before being written to the database
 	michael := &Person{"1", "Michael", "Jackson"}
 	// Michael's last name will be encrypted
 	db.Create(michael)

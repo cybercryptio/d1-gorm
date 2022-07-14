@@ -2,10 +2,8 @@ module github.com/cybercryptio/d1-gorm
 
 go 1.18
 
-replace github.com/cybercryptio/d1-client-go => ../d1-client-go
-
 require (
-	github.com/cybercryptio/d1-client-go v0.0.0-00010101000000-000000000000
+	github.com/cybercryptio/d1-client-go v0.1.32-ci.8
 	github.com/stretchr/testify v1.8.0
 	google.golang.org/grpc v1.47.0
 	gorm.io/driver/sqlite v1.3.6
