@@ -16,9 +16,11 @@ import (
 )
 
 type TestData struct {
-	DocumentId    int
-	Text          string
-	EncryptedText string
+	DocumentId     int
+	Text           string
+	Bytes          []byte
+	EncryptedText  string
+	EncryptedBytes []byte
 }
 
 // The initial schema without encrypted text
@@ -26,37 +28,43 @@ type DocumentV1 struct {
 	gorm.Model
 	DocumentId int
 	Text       string
+	Bytes      []byte
 }
 
 // The new schema with encrypted text
 type DocumentV2 struct {
 	gorm.Model
-	DocumentId    int
-	Text          string
-	EncryptedText string `gorm:"serializer:D1"`
+	DocumentId     int
+	Text           string
+	Bytes          []byte
+	EncryptedText  string `gorm:"serializer:D1"`
+	EncryptedBytes []byte `gorm:"serializer:D1"`
 }
 
 // A fake schema used to read the encrypted text without going through the serializer
 type DocumentRaw struct {
 	gorm.Model
-	DocumentId    int
-	Text          string
-	EncryptedText string
+	Text           string
+	Bytes          []byte
+	EncryptedText  string
+	EncryptedBytes []byte
 }
 
-func generateTestData(count int) []TestData {
+func generateTestData(t *testing.T, count int) []TestData {
 	testData := make([]TestData, count)
 	for i := range testData {
-		text := uuid.New().String()
-		bytes := ([]byte)(text)
-		for i, b := range bytes {
-			bytes[i] = b + 1
-		}
-		encryptedText := string(bytes)
+		bytes, err := uuid.New().MarshalBinary()
+		assert.Nil(t, err)
+
+		encryptedBytes, err := uuid.New().MarshalBinary()
+		assert.Nil(t, err)
+
 		testData[i] = TestData{
-			DocumentId:    i,
-			Text:          text,
-			EncryptedText: encryptedText,
+			DocumentId:     i,
+			Text:           uuid.New().String(),
+			EncryptedText:  uuid.New().String(),
+			Bytes:          bytes,
+			EncryptedBytes: encryptedBytes,
 		}
 	}
 	return testData
@@ -91,13 +99,17 @@ func (m *SerializerMock) OnScan(dbValue interface{}, fieldValue interface{}) *mo
 
 func TestMigration(t *testing.T) {
 	const count = 10
-	testData := generateTestData(count)
+	testData := generateTestData(t, count)
 
 	// Set up the mock serializer
 	serializer := &SerializerMock{}
-	serializer.OnScan(nil, nil).Times(count)
+	// We expect two deserializations per entry during the migration.
+	// One for the EncryptedText, another for the EncryptedBytes.
+	// This is because the migration tries to read the empty data.
+	serializer.OnScan(nil, nil).Times(count * 2)
 	for _, data := range testData {
 		serializer.OnValue(data.Text, data.EncryptedText).Once()
+		serializer.OnValue(data.Bytes, data.EncryptedBytes).Once()
 	}
 
 	// Set up the database
@@ -111,7 +123,7 @@ func TestMigration(t *testing.T) {
 
 		docs := make([]Document, len(testData))
 		for i, d := range testData {
-			docs[i] = Document{DocumentId: d.DocumentId, Text: d.Text}
+			docs[i] = Document{DocumentId: d.DocumentId, Text: d.Text, Bytes: d.Bytes}
 		}
 
 		result := db.Create(&docs)
@@ -125,6 +137,7 @@ func TestMigration(t *testing.T) {
 
 		migrateDocument := func(d *Document) {
 			d.EncryptedText = d.Text
+			d.EncryptedBytes = d.Bytes
 		}
 
 		result := Migrate(db, migrateDocument)
