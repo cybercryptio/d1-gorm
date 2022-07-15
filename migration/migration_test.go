@@ -1,13 +1,12 @@
 package migration
 
 import (
-	"encoding/base64"
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 
-	d1gorm "github.com/cybercryptio/d1-gorm"
 	"github.com/cybercryptio/d1-gorm/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,13 +14,10 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// Prepare data
 type TestData struct {
-	DocumentId     int
-	Text           string
-	Bytes          []byte
-	EncryptedText  string
-	EncryptedBytes []byte
+	DocumentId    int
+	Text          string
+	EncryptedText string
 }
 
 // The initial schema without encrypted text
@@ -47,59 +43,71 @@ type DocumentRaw struct {
 	EncryptedText string
 }
 
-func generateTestData(count uint) []TestData {
+func generateTestData(count int) []TestData {
 	testData := make([]TestData, count)
 	for i := range testData {
 		text := fmt.Sprintf("Secret #%d", i)
 		encryptedText := fmt.Sprintf("Encrypted [%s]", text)
-		bytes := []byte(text)
-		encryptedBytes := []byte(encryptedText)
-		testData[i] = TestData{i, text, bytes, encryptedText, encryptedBytes}
+		testData[i] = TestData{
+			DocumentId:    i,
+			Text:          text,
+			EncryptedText: encryptedText,
+		}
 	}
 	return testData
 }
 
-func mapSlice[T any, U any](slice []T, mapper func(T) U) []U {
-	mapped := make([]U, len(slice))
-	for i, value := range slice {
-		mapped[i] = mapper(value)
-	}
-	return mapped
+type SerializerMock struct {
+	mock.Mock
 }
 
-func newSorter[T any](sorter func(T, T) bool) func([]T) {
-	return func(slice []T) {
-		sort.SliceStable(slice, func(i, j int) bool {
-			return sorter(slice[i], slice[j])
-		})
-	}
+func (m *SerializerMock) Value(ctx context.Context, field *schema.Field, dst reflect.Value, fieldValue interface{}) (interface{}, error) {
+	args := m.Called(ctx, field, dst, fieldValue)
+	return args.Get(0), args.Error(1)
+}
+
+func (m *SerializerMock) Scan(ctx context.Context, field *schema.Field, dst reflect.Value, dbValue interface{}) error {
+	args := m.Called(ctx, field, dst, dbValue)
+	return args.Error(0)
+}
+
+func (m *SerializerMock) OnValue(fieldValue interface{}, dbValue interface{}) *mock.Call {
+	return m.On("Value", mock.Anything, mock.Anything, mock.Anything, fieldValue).Return(dbValue, nil)
+}
+
+func (m *SerializerMock) OnScan(dbValue interface{}, fieldValue interface{}) *mock.Call {
+	return m.On("Scan", mock.Anything, mock.Anything, mock.Anything, dbValue).Return(nil).Run(func(args mock.Arguments) {
+		ctx := args.Get(0).(context.Context)
+		field := args.Get(1).(*schema.Field)
+		dst := args.Get(2).(reflect.Value)
+		field.Set(ctx, dst, fieldValue)
+	})
 }
 
 func TestMigration(t *testing.T) {
-	const count uint = 10
-
+	const count = 10
 	testData := generateTestData(count)
 
 	// Set up the mock
-	cryptor := &testutil.CryptorMock{}
+	serializer := &SerializerMock{}
+	serializer.OnScan(nil, nil).Times(count)
 	for _, data := range testData {
-		cryptor.On("Encrypt", mock.Anything, data.Bytes).Once().Return(data.EncryptedBytes, nil)
+		serializer.OnValue(data.Text, data.EncryptedText).Once()
 	}
 
 	// Set up the database
-	d1Serializer := d1gorm.NewD1Serializer(cryptor)
-	schema.RegisterSerializer("D1", d1Serializer)
+	schema.RegisterSerializer("D1", serializer)
 	db := testutil.NewTestDB(t)
 
 	// Load initial data
 	{
 		type Document DocumentV1
-
 		db.AutoMigrate(&Document{})
 
-		docs := mapSlice(testData, func(d TestData) Document {
-			return Document{DocumentId: d.DocumentId, Text: d.Text}
-		})
+		docs := make([]Document, len(testData))
+		for i, d := range testData {
+			docs[i] = Document{DocumentId: d.DocumentId, Text: d.Text}
+		}
 
 		result := db.Create(&docs)
 		assert.Nil(t, result.Error)
@@ -107,9 +115,7 @@ func TestMigration(t *testing.T) {
 
 	// Do a migration
 	{
-		// The new schema with encrypted text
 		type Document DocumentV2
-
 		db.AutoMigrate(&Document{})
 
 		migrateDocument := func(d *Document) {
@@ -120,49 +126,27 @@ func TestMigration(t *testing.T) {
 		assert.Nil(t, result.Error)
 	}
 
-	cryptor.AssertExpectations(t)
+	serializer.AssertExpectations(t)
 
 	// Read the raw data back and verify
 	{
-		// F
-
 		type Document DocumentRaw
 
 		var docs []Document
 		result := db.Find(&docs)
 		assert.Nil(t, result.Error)
 
-		type Data struct {
-			DocumentId    int
-			Text          string
-			EncryptedText string
-		}
+		assert.Equal(t, len(testData), len(docs))
 
-		expected := mapSlice(testData, func(d TestData) Data {
-			return Data{
-				DocumentId:    d.DocumentId,
-				Text:          d.Text,
-				EncryptedText: base64.StdEncoding.EncodeToString(d.EncryptedBytes),
-			}
+		sort.Slice(docs, func(i, j int) bool {
+			return docs[i].DocumentId < docs[j].DocumentId
 		})
 
-		actual := mapSlice(docs, func(d Document) Data {
-			return Data{
-				DocumentId:    d.DocumentId,
-				Text:          d.Text,
-				EncryptedText: d.EncryptedText,
-			}
-		})
-
-		sortData := newSorter(func(a, b Data) bool {
-			return a.DocumentId < b.DocumentId
-		})
-
-		sortData(expected)
-		sortData(actual)
-
-		if !reflect.DeepEqual(expected, actual) {
-			t.Fatal("Expected data did not match actual data.")
+		for i, doc := range docs {
+			d := testData[i]
+			assert.Equal(t, d.DocumentId, doc.DocumentId)
+			assert.Equal(t, d.Text, doc.Text)
+			assert.Equal(t, d.EncryptedText, doc.EncryptedText)
 		}
 	}
 }
