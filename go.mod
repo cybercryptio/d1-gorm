@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/cybercryptio/d1-client-go v0.1.32-ci.8
+	github.com/google/uuid v1.1.2
 	github.com/stretchr/testify v1.8.0
 	google.golang.org/grpc v1.47.0
 	gorm.io/driver/sqlite v1.3.6

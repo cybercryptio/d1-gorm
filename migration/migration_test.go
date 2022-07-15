@@ -137,8 +137,8 @@ func TestMigration(t *testing.T) {
 	{
 		type Document DocumentRaw
 
-		var docs []Document
-		result := db.Find(&docs)
+		var docs []TestData
+		result := db.Model(&Document{}).Find(&docs)
 		assert.Nil(t, result.Error)
 
 		assert.Equal(t, len(testData), len(docs))
@@ -147,11 +147,6 @@ func TestMigration(t *testing.T) {
 			return docs[i].DocumentId < docs[j].DocumentId
 		})
 
-		for i, doc := range docs {
-			d := testData[i]
-			assert.Equal(t, d.DocumentId, doc.DocumentId)
-			assert.Equal(t, d.Text, doc.Text)
-			assert.Equal(t, d.EncryptedText, doc.EncryptedText)
-		}
+		assert.Equal(t, testData, docs)
 	}
 }
