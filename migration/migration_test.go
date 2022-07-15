@@ -2,16 +2,17 @@ package migration
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 
-	"github.com/cybercryptio/d1-gorm/testutil"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	"github.com/cybercryptio/d1-gorm/testutil"
 )
 
 type TestData struct {
@@ -46,8 +47,12 @@ type DocumentRaw struct {
 func generateTestData(count int) []TestData {
 	testData := make([]TestData, count)
 	for i := range testData {
-		text := fmt.Sprintf("Secret #%d", i)
-		encryptedText := fmt.Sprintf("Encrypted [%s]", text)
+		text := uuid.New().String()
+		bytes := ([]byte)(text)
+		for i, b := range bytes {
+			bytes[i] = b + 1
+		}
+		encryptedText := string(bytes)
 		testData[i] = TestData{
 			DocumentId:    i,
 			Text:          text,
@@ -88,7 +93,7 @@ func TestMigration(t *testing.T) {
 	const count = 10
 	testData := generateTestData(count)
 
-	// Set up the mock
+	// Set up the mock serializer
 	serializer := &SerializerMock{}
 	serializer.OnScan(nil, nil).Times(count)
 	for _, data := range testData {
