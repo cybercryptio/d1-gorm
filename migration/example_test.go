@@ -2,10 +2,13 @@ package migration
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func AddUsers(db *gorm.DB, count int) {
@@ -39,8 +42,11 @@ func AddUsers(db *gorm.DB, count int) {
 	db.Create(&users)
 }
 
-func ExampleMigrate(db *gorm.DB) {
-	db = db.Debug()
+func ExampleMigrate() {
+	db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	{
 		// The initial setup.
