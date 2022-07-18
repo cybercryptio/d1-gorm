@@ -25,10 +25,18 @@ type CryptorMock struct {
 
 func (m *CryptorMock) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 	args := m.Called(ctx, plaintext)
-	return args.Get(0).([]byte), args.Error(1)
+	ciphertext := args.Get(0)
+	if ciphertext == nil {
+		return nil, args.Error(1)
+	}
+	return ciphertext.([]byte), args.Error(1)
 }
 
 func (m *CryptorMock) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, error) {
 	args := m.Called(ctx, ciphertext)
-	return args.Get(0).([]byte), args.Error(1)
+	plaintext := args.Get(0)
+	if plaintext == nil {
+		return nil, args.Error(1)
+	}
+	return plaintext.([]byte), args.Error(1)
 }

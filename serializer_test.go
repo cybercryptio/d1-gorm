@@ -1,6 +1,7 @@
 package d1gorm
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -149,6 +150,66 @@ func TestSerializerUnsupported(t *testing.T) {
 
 		cryptor.AssertExpectations(t)
 	}
+
+	os.Remove("test.db")
+}
+
+func TestSerializerEncryptError(t *testing.T) {
+	type PersonString struct {
+		FirstName string
+		LastName  string `gorm:"serializer:D1"`
+	}
+
+	firstName := "John"
+	lastName := "Doe"
+	ErrEncrypt := fmt.Errorf("encryption error")
+
+	cryptor := &testutil.CryptorMock{}
+	// The Serializer's Value method will be called twice: once when trying to insert into the database, and once for logging the statement that
+	// returned the error.
+	cryptor.On("Encrypt", mock.Anything, []byte(lastName)).Return(nil, ErrEncrypt)
+
+	d1Serializer := NewD1Serializer(cryptor)
+	schema.RegisterSerializer("D1", d1Serializer)
+
+	db := testutil.NewTestDB(t)
+	db.AutoMigrate(&PersonString{})
+
+	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	assert.ErrorContains(t, err, ErrEncrypt.Error())
+	cryptor.AssertExpectations(t)
+
+	os.Remove("test.db")
+}
+
+func TestSerializerDecryptError(t *testing.T) {
+	type PersonString struct {
+		FirstName string
+		LastName  string `gorm:"serializer:D1"`
+	}
+
+	firstName := "John"
+	lastName := "Doe"
+	encryptedLastName := "Doencrypt"
+	ErrDecrypt := fmt.Errorf("decryption error")
+
+	cryptor := &testutil.CryptorMock{}
+	cryptor.On("Encrypt", mock.Anything, []byte(lastName)).Once().Return([]byte(encryptedLastName), nil)
+	cryptor.On("Decrypt", mock.Anything, []byte(encryptedLastName)).Once().Return(nil, ErrDecrypt)
+
+	d1Serializer := NewD1Serializer(cryptor)
+	schema.RegisterSerializer("D1", d1Serializer)
+
+	db := testutil.NewTestDB(t)
+	db.AutoMigrate(&PersonString{})
+
+	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	assert.Nil(t, err)
+
+	p := &PersonString{}
+	err = db.Where("first_name = ?", firstName).First(p).Error
+	assert.ErrorContains(t, err, ErrDecrypt.Error())
+	cryptor.AssertExpectations(t)
 
 	os.Remove("test.db")
 }
