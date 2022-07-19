@@ -1,3 +1,4 @@
+//nolint:gosec // for using math/rand
 package migration
 
 import (
@@ -59,8 +60,8 @@ func ExampleMigrate() {
 			Favorites     int
 		}
 
-		db.Migrator().DropTable(&User{})
-		db.AutoMigrate(&User{})
+		_ = db.Migrator().DropTable(&User{})
+		_ = db.AutoMigrate(&User{})
 
 		AddUsers(db, 24)
 	}
@@ -79,7 +80,7 @@ func ExampleMigrate() {
 		}
 
 		// This will adjust the database schema to have the two new columns.
-		db.AutoMigrate(&User{})
+		_ = db.AutoMigrate(&User{})
 
 		// The old unencrypted first and last names, should be migrated to the encrypted columns.
 		migrateUser := func(u *User) {

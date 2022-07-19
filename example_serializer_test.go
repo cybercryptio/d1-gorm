@@ -49,7 +49,7 @@ func Example() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.AutoMigrate(&Person{})
+	_ = db.AutoMigrate(&Person{})
 
 	// Now all the created Persons will have their fields tagged with "serializer:D1" encrypted before being written to the database
 	michael := &Person{"1", "Michael", "Jackson"}

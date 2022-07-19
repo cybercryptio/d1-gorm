@@ -16,7 +16,7 @@ import (
 )
 
 type TestData struct {
-	DocumentId     int
+	DocumentID     int
 	Text           string
 	Bytes          []byte
 	EncryptedText  string
@@ -26,7 +26,7 @@ type TestData struct {
 // The initial schema without encrypted text
 type DocumentV1 struct {
 	gorm.Model
-	DocumentId int
+	DocumentID int
 	Text       string
 	Bytes      []byte
 }
@@ -34,7 +34,7 @@ type DocumentV1 struct {
 // The new schema with encrypted text
 type DocumentV2 struct {
 	gorm.Model
-	DocumentId     int
+	DocumentID     int
 	Text           string
 	Bytes          []byte
 	EncryptedText  string `gorm:"serializer:D1"`
@@ -60,7 +60,7 @@ func generateTestData(t *testing.T, count int) []TestData {
 		assert.Nil(t, err)
 
 		testData[i] = TestData{
-			DocumentId:     i,
+			DocumentID:     i,
 			Text:           uuid.New().String(),
 			EncryptedText:  uuid.New().String(),
 			Bytes:          bytes,
@@ -93,7 +93,7 @@ func (m *SerializerMock) OnScan(dbValue interface{}, fieldValue interface{}) *mo
 		ctx := args.Get(0).(context.Context)
 		field := args.Get(1).(*schema.Field)
 		dst := args.Get(2).(reflect.Value)
-		field.Set(ctx, dst, fieldValue)
+		_ = field.Set(ctx, dst, fieldValue)
 	})
 }
 
@@ -119,11 +119,12 @@ func TestMigration(t *testing.T) {
 	// Load initial data
 	{
 		type Document DocumentV1
-		db.AutoMigrate(&Document{})
+		err := db.AutoMigrate(&Document{})
+		assert.Nil(t, err)
 
 		docs := make([]Document, len(testData))
 		for i, d := range testData {
-			docs[i] = Document{DocumentId: d.DocumentId, Text: d.Text, Bytes: d.Bytes}
+			docs[i] = Document{DocumentID: d.DocumentID, Text: d.Text, Bytes: d.Bytes}
 		}
 
 		result := db.Create(&docs)
@@ -133,7 +134,8 @@ func TestMigration(t *testing.T) {
 	// Do a migration
 	{
 		type Document DocumentV2
-		db.AutoMigrate(&Document{})
+		err := db.AutoMigrate(&Document{})
+		assert.Nil(t, err)
 
 		migrateDocument := func(d *Document) {
 			d.EncryptedText = d.Text
@@ -157,7 +159,7 @@ func TestMigration(t *testing.T) {
 		assert.Equal(t, len(testData), len(docs))
 
 		sort.Slice(docs, func(i, j int) bool {
-			return docs[i].DocumentId < docs[j].DocumentId
+			return docs[i].DocumentID < docs[j].DocumentID
 		})
 
 		assert.Equal(t, testData, docs)

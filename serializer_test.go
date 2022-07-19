@@ -29,9 +29,10 @@ func TestSerializerString(t *testing.T) {
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	db := testutil.NewTestDB(t)
-	db.AutoMigrate(&PersonString{})
+	err := db.AutoMigrate(&PersonString{})
+	assert.Nil(t, err)
 
-	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	err = db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonString{}
@@ -61,9 +62,10 @@ func TestSerializerBytes(t *testing.T) {
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	db := testutil.NewTestDB(t)
-	db.AutoMigrate(&PersonBytes{})
+	err := db.AutoMigrate(&PersonBytes{})
+	assert.Nil(t, err)
 
-	err := db.Create(&PersonBytes{FirstName: firstName, LastName: lastName}).Error
+	err = db.Create(&PersonBytes{FirstName: firstName, LastName: lastName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonBytes{}
@@ -89,9 +91,10 @@ func TestSerializerNil(t *testing.T) {
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	db := testutil.NewTestDB(t)
-	db.AutoMigrate(&PersonBytes{})
+	err := db.AutoMigrate(&PersonBytes{})
+	assert.Nil(t, err)
 
-	err := db.Create(&PersonBytes{FirstName: firstName}).Error
+	err = db.Create(&PersonBytes{FirstName: firstName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonBytes{}
@@ -115,9 +118,10 @@ func TestSerializerUnsupported(t *testing.T) {
 			Age       int
 		}
 
-		db.AutoMigrate(&PersonAge{})
+		err := db.AutoMigrate(&PersonAge{})
+		assert.Nil(t, err)
 
-		err := db.Create(&PersonAge{FirstName: firstName1, Age: 30}).Error
+		err = db.Create(&PersonAge{FirstName: firstName1, Age: 30}).Error
 		assert.Nil(t, err)
 	}
 
@@ -132,9 +136,10 @@ func TestSerializerUnsupported(t *testing.T) {
 		d1Serializer := NewD1Serializer(cryptor)
 		schema.RegisterSerializer("D1", d1Serializer)
 
-		db.AutoMigrate(&PersonAge{})
+		err := db.AutoMigrate(&PersonAge{})
+		assert.Nil(t, err)
 
-		err := db.Create(&PersonAge{FirstName: firstName2, Age: 30}).Error
+		err = db.Create(&PersonAge{FirstName: firstName2, Age: 30}).Error
 		assert.ErrorContains(t, err, ErrEncryptUnsupported.Error())
 
 		p := &PersonAge{}
@@ -164,9 +169,10 @@ func TestSerializerEncryptError(t *testing.T) {
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	db := testutil.NewTestDB(t)
-	db.AutoMigrate(&PersonString{})
+	err := db.AutoMigrate(&PersonString{})
+	assert.Nil(t, err)
 
-	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	err = db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
 	assert.ErrorContains(t, err, ErrEncrypt.Error())
 	cryptor.AssertExpectations(t)
 }
@@ -190,9 +196,10 @@ func TestSerializerDecryptError(t *testing.T) {
 	schema.RegisterSerializer("D1", d1Serializer)
 
 	db := testutil.NewTestDB(t)
-	db.AutoMigrate(&PersonString{})
+	err := db.AutoMigrate(&PersonString{})
+	assert.Nil(t, err)
 
-	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	err = db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
 	assert.Nil(t, err)
 
 	p := &PersonString{}

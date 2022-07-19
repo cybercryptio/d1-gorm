@@ -29,18 +29,18 @@ func (c D1Cryptor) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error
 	return append([]byte(res.ObjectId), res.Ciphertext...), nil
 }
 
-const UUID_LENGTH = 36
+const UUIDLength = 36
 
 var ErrInvalidFormat = fmt.Errorf("the format of the ciphertext is invalid")
 
 func (c D1Cryptor) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, error) {
-	if len(ciphertext) < UUID_LENGTH {
+	if len(ciphertext) < UUIDLength {
 		return nil, ErrInvalidFormat
 	}
 
 	res, err := c.d1Client.Generic.Decrypt(ctx, &pbgeneric.DecryptRequest{
-		ObjectId:   string(ciphertext[:UUID_LENGTH]),
-		Ciphertext: ciphertext[UUID_LENGTH:],
+		ObjectId:   string(ciphertext[:UUIDLength]),
+		Ciphertext: ciphertext[UUIDLength:],
 	})
 	if err != nil {
 		return nil, err

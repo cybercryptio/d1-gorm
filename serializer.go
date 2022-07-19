@@ -55,8 +55,7 @@ func (s D1Serializer) Scan(ctx context.Context, field *schema.Field, dst reflect
 			return err
 		}
 	case nil:
-		field.Set(ctx, dst, nil)
-		return nil
+		return field.Set(ctx, dst, nil)
 	default:
 		return fmt.Errorf("decryption of type %T: %w", value, ErrDecryptUnsupported)
 	}
@@ -66,7 +65,5 @@ func (s D1Serializer) Scan(ctx context.Context, field *schema.Field, dst reflect
 		return err
 	}
 
-	field.Set(ctx, dst, decryptedValue)
-
-	return nil
+	return field.Set(ctx, dst, decryptedValue)
 }
