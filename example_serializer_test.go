@@ -7,7 +7,7 @@ import (
 
 	client "github.com/cybercryptio/d1-client-go/d1-generic"
 	d1gorm "github.com/cybercryptio/d1-gorm"
-	"github.com/cybercryptio/d1-gorm/encrypt"
+	"github.com/cybercryptio/d1-gorm/crypto"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -39,7 +39,7 @@ func Example() {
 	}
 
 	// Instantiate the D1Serializer with a Cryptor that uses the created client
-	d1Serializer := d1gorm.NewD1Serializer(encrypt.NewD1Cryptor(client))
+	d1Serializer := d1gorm.NewD1Serializer(crypto.NewD1Cryptor(client))
 
 	// Register the D1Serializer to be used for your database schema
 	schema.RegisterSerializer("D1", d1Serializer)

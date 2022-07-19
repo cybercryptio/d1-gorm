@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/cybercryptio/d1-gorm/encrypt"
+	"github.com/cybercryptio/d1-gorm/crypto"
 	"gorm.io/gorm/schema"
 )
 
@@ -14,10 +14,10 @@ var ErrEncryptUnsupported = fmt.Errorf("supported encryption field types: string
 var ErrDecryptUnsupported = fmt.Errorf("supported decryption field types: string, []byte")
 
 type D1Serializer struct {
-	cryptor encrypt.Cryptor
+	cryptor crypto.Cryptor
 }
 
-func NewD1Serializer(cryptor encrypt.Cryptor) D1Serializer {
+func NewD1Serializer(cryptor crypto.Cryptor) D1Serializer {
 	return D1Serializer{cryptor: cryptor}
 }
 
