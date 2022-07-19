@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"context"
+	"fmt"
 
 	client "github.com/cybercryptio/d1-client-go/d1-generic"
 	pbgeneric "github.com/cybercryptio/d1-client-go/d1-generic/protobuf/generic"
@@ -30,7 +31,13 @@ func (c D1Cryptor) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error
 
 const UUID_LENGTH = 36
 
+var ErrInvalidFormat = fmt.Errorf("the format of the ciphertext is invalid")
+
 func (c D1Cryptor) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, error) {
+	if len(ciphertext) < UUID_LENGTH {
+		return nil, ErrInvalidFormat
+	}
+
 	res, err := c.d1Client.Generic.Decrypt(ctx, &pbgeneric.DecryptRequest{
 		ObjectId:   string(ciphertext[:UUID_LENGTH]),
 		Ciphertext: ciphertext[UUID_LENGTH:],
@@ -38,5 +45,6 @@ func (c D1Cryptor) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
+
 	return res.Plaintext, nil
 }
