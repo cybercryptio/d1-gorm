@@ -6,7 +6,7 @@ type options struct {
 	batchSize int
 }
 
-type option func(*options)
+type Option func(*options)
 
 func defaultOptions() options {
 	return options{
@@ -14,13 +14,13 @@ func defaultOptions() options {
 	}
 }
 
-func (o *options) apply(opts ...option) {
+func (o *options) apply(opts ...Option) {
 	for _, opt := range opts {
 		opt(o)
 	}
 }
 
-func BatchSize(batchSize int) option {
+func WithBatchSize(batchSize int) Option {
 	return func(o *options) {
 		o.batchSize = batchSize
 	}

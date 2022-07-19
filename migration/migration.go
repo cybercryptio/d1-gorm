@@ -4,7 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func Migrate[T any](db *gorm.DB, migrate func(*T), opts ...option) *gorm.DB {
+func Migrate[T any](db *gorm.DB, migrate func(*T), opts ...Option) *gorm.DB {
 	o := defaultOptions()
 	o.apply(opts...)
 
