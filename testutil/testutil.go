@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"context"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,9 +11,7 @@ import (
 )
 
 func NewTestDB(t *testing.T) *gorm.DB {
-	file := path.Join(t.TempDir(), "test.db")
-
-	db, err := gorm.Open(sqlite.Open(file), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	assert.Nil(t, err)
 	return db
 }

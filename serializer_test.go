@@ -2,7 +2,6 @@ package d1gorm
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,8 +41,6 @@ func TestSerializerString(t *testing.T) {
 	assert.Equal(t, firstName, p.FirstName)
 	assert.Equal(t, lastName, p.LastName)
 	cryptor.AssertExpectations(t)
-
-	os.Remove("test.db")
 }
 
 func TestSerializerBytes(t *testing.T) {
@@ -76,8 +73,6 @@ func TestSerializerBytes(t *testing.T) {
 	assert.Equal(t, firstName, p.FirstName)
 	assert.Equal(t, lastName, p.LastName)
 	cryptor.AssertExpectations(t)
-
-	os.Remove("test.db")
 }
 
 func TestSerializerNil(t *testing.T) {
@@ -106,8 +101,6 @@ func TestSerializerNil(t *testing.T) {
 	assert.Equal(t, firstName, p.FirstName)
 	assert.Nil(t, p.LastName)
 	cryptor.AssertExpectations(t)
-
-	os.Remove("test.db")
 }
 
 func TestSerializerUnsupported(t *testing.T) {
@@ -150,8 +143,6 @@ func TestSerializerUnsupported(t *testing.T) {
 
 		cryptor.AssertExpectations(t)
 	}
-
-	os.Remove("test.db")
 }
 
 func TestSerializerEncryptError(t *testing.T) {
@@ -178,8 +169,6 @@ func TestSerializerEncryptError(t *testing.T) {
 	err := db.Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
 	assert.ErrorContains(t, err, ErrEncrypt.Error())
 	cryptor.AssertExpectations(t)
-
-	os.Remove("test.db")
 }
 
 func TestSerializerDecryptError(t *testing.T) {
@@ -210,6 +199,4 @@ func TestSerializerDecryptError(t *testing.T) {
 	err = db.Where("first_name = ?", firstName).First(p).Error
 	assert.ErrorContains(t, err, ErrDecrypt.Error())
 	cryptor.AssertExpectations(t)
-
-	os.Remove("test.db")
 }
