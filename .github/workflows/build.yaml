@@ -1,0 +1,60 @@
+name: Integrations build and test
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+env:
+  # This tells Go to bypass the public proxies,
+  # and download our private modules directly from the source.
+  GOPRIVATE: 'github.com/cybercryptio/*'
+
+jobs:
+  d1gorm-build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    # This step ensures following steps using Git (like Go)
+    # use our access token to connect to GitHub repos.
+    # This is needed for Go to get our own modules from our private repos.
+    - name: Configure git
+      run: git config --global url.https://${{ secrets.CYBOT_TOKEN }}@github.com/.insteadOf https://github.com/
+
+    - name: Setup and cache dependencies
+      uses: cybercryptio/build-setup-action@master
+
+    - name: Lint
+      run: make lint
+
+    - name: Build
+      run: make build
+
+    - name: Run unit tests
+      run: make unit-tests
+
+    - name: Install GitVersion
+      if: github.ref_name == 'master'
+      uses: gittools/actions/gitversion/setup@v0.9.13
+      with:
+        versionSpec: '5.x'
+
+    - name: Determine Version
+      if: github.ref_name == 'master'
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v0.9.13
+      with:
+        additionalArguments: '/overrideconfig mode=ContinuousDeployment'
+
+    - name: Create tag
+      if: github.ref_name == 'master'
+      run: |
+        git tag v${{ steps.gitversion.outputs.semVer }}
+        git push origin v${{ steps.gitversion.outputs.semVer }}

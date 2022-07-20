@@ -1,0 +1,29 @@
+name: Snyk scan
+
+on: push
+
+env:
+  # This tells Go to bypass the public proxies,
+  # and download our private modules directly from the source.
+  GOPRIVATE: 'github.com/cybercryptio/*'
+
+jobs:
+  scan-go:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+
+    # This step ensures following steps using Git (like Go)
+    # use our access token to connect to GitHub repos.
+    # This is needed for Go to get our own modules from our private repos.
+    - name: Configure git
+      run: git config --global url.https://${{ secrets.CYBOT_TOKEN }}@github.com/.insteadOf https://github.com/
+
+    - name: Install Snyk CLI
+      uses: snyk/actions/setup@master
+
+    - name: Scan go projects
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      run: snyk test --all-projects
