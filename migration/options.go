@@ -6,6 +6,7 @@ type options struct {
 	batchSize int
 }
 
+// Option is used to configure optional settings for the migration.
 type Option func(*options)
 
 func defaultOptions() options {
@@ -20,6 +21,7 @@ func (o *options) apply(opts ...Option) {
 	}
 }
 
+// WithBatchSize sets the batch size to be used when migrating data. The default batch size is 10.
 func WithBatchSize(batchSize int) Option {
 	return func(o *options) {
 		o.batchSize = batchSize
