@@ -6,7 +6,13 @@ This protects the data in the database from being read by third parties and tamp
 
 ## Supported databases
 
-All databases supported by GORM are supported by the d1gorm package. These include: MySQL, PostgreSQL, SQL Server, SQLite, as well as any database that is compatible with the `mysql` or `postgres` dialects.
+All databases supported by GORM are supported by the d1gorm package. These include:
+
+- MySQL
+- PostgreSQL
+- SQL Server
+- SQLite
+- any database that is compatible with the `mysql` or `postgres` dialects.
 
 ## Installation
 
