@@ -4,6 +4,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// Migrate can be used for migrating data from an existing database with unencrypted data to a new format which has encrypted data in the colums
+// tagged as such. Before calling migrate, the user has to extend the database tables with columns for holding the encrypted data. Then Migrate can be
+// called on the database with a function that works on the migrated data type and which will be executed to migrate the database entries. For more
+// details, see the example in the godoc.
 func Migrate[T any](db *gorm.DB, migrate func(*T), opts ...Option) *gorm.DB {
 	o := defaultOptions()
 	o.apply(opts...)

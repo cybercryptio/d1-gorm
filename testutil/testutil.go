@@ -10,12 +10,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// Utility function that creates an in-memory database to be used for testing.
 func NewTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	assert.Nil(t, err)
 	return db
 }
 
+// CryptorMock is a mock implementation of the Cryptor interface.
 type CryptorMock struct {
 	mock.Mock
 }

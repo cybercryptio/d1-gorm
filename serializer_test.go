@@ -1,6 +1,7 @@
 package d1gorm
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -206,4 +207,58 @@ func TestSerializerDecryptError(t *testing.T) {
 	err = db.Where("first_name = ?", firstName).First(p).Error
 	assert.ErrorContains(t, err, ErrDecrypt.Error())
 	cryptor.AssertExpectations(t)
+}
+
+type ctxKeyType string
+
+type cryptorTestCtx struct {
+	t           *testing.T
+	token       string
+	tokenCtxKey ctxKeyType
+}
+
+func (c *cryptorTestCtx) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
+	token, found := ctx.Value(c.tokenCtxKey).(string)
+	assert.True(c.t, found)
+	assert.Equal(c.t, c.token, token)
+	return plaintext, nil
+}
+
+func (c *cryptorTestCtx) Decrypt(ctx context.Context, ciphertext []byte) ([]byte, error) {
+	token, found := ctx.Value(c.tokenCtxKey).(string)
+	assert.True(c.t, found)
+	assert.Equal(c.t, c.token, token)
+	return ciphertext, nil
+}
+
+func TestSerializerPassTokenInCtx(t *testing.T) {
+	type PersonString struct {
+		FirstName string
+		LastName  string `gorm:"serializer:D1"`
+	}
+
+	firstName := "John"
+	lastName := "Doe"
+	token := "token"
+	tokenCtxKey := ctxKeyType("tokenCtxKey")
+
+	cryptor := &cryptorTestCtx{t, token, tokenCtxKey}
+
+	d1Serializer := NewD1Serializer(cryptor)
+	schema.RegisterSerializer("D1", d1Serializer)
+
+	db := testutil.NewTestDB(t)
+	err := db.AutoMigrate(&PersonString{})
+	assert.Nil(t, err)
+
+	ctx := context.WithValue(context.Background(), tokenCtxKey, token)
+
+	err = db.WithContext(ctx).Create(&PersonString{FirstName: firstName, LastName: lastName}).Error
+	assert.Nil(t, err)
+
+	p := &PersonString{}
+	err = db.WithContext(ctx).Where("first_name = ?", firstName).First(p).Error
+	assert.Nil(t, err)
+	assert.Equal(t, firstName, p.FirstName)
+	assert.Equal(t, lastName, p.LastName)
 }
