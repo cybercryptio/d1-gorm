@@ -23,7 +23,7 @@ go get github.com/cybercryptio/d1-gorm
 
 ## Usage
 
-For examples of how to use the integration [see our examples in the godoc](TODO).
+For examples of how to use the integration [see our examples in the godoc](https://pkg.go.dev/github.com/cybercryptio/d1-gorm).
 
 ## Limitations
 
