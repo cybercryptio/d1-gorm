@@ -29,3 +29,7 @@ For examples of how to use the integration [see our examples in the godoc](https
 
 - Currently only `string` and `[]byte` data fields can be encrypted.
 - Encrypted data is not searchable by the database.
+
+## License
+
+The software in the CYBERCRYPT d1-gorm repository is licensed under the Apache License 2.0.
