@@ -7,11 +7,6 @@ on:
     tags-ignore:
       - '**'
 
-env:
-  # This tells Go to bypass the public proxies,
-  # and download our private modules directly from the source.
-  GOPRIVATE: 'github.com/cybercryptio/*'
-
 jobs:
   d1gorm-build:
     runs-on: ubuntu-20.04
@@ -21,12 +16,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-
-    # This step ensures following steps using Git (like Go)
-    # use our access token to connect to GitHub repos.
-    # This is needed for Go to get our own modules from our private repos.
-    - name: Configure git
-      run: git config --global url.https://${{ secrets.CYBOT_TOKEN }}@github.com/.insteadOf https://github.com/
 
     - name: Setup and cache dependencies
       uses: cybercryptio/build-setup-action@master
