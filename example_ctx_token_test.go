@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"log"
 
-	client "github.com/cybercryptio/d1-client-go/d1-generic"
+	client "github.com/cybercryptio/d1-client-go/v2/d1-generic"
+	pb "github.com/cybercryptio/d1-client-go/v2/d1-generic/protobuf/authn"
 	d1gorm "github.com/cybercryptio/d1-gorm"
 	"github.com/cybercryptio/d1-gorm/crypto"
+	"google.golang.org/grpc"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -29,30 +31,44 @@ import (
 )
 
 type ctxKeyType string
+type perRPCToken struct{}
 
 var tokenKey = ctxKeyType("token")
 
+func (p perRPCToken) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	token, found := ctx.Value(tokenKey).(string)
+	if !found {
+		return nil, fmt.Errorf("token not found in context")
+	}
+	return map[string]string{"authorization": "bearer " + token}, nil
+}
+
+func (p perRPCToken) RequireTransportSecurity() bool {
+	return false
+}
+
 func getToken() string {
-	token, err := client.NewStandalonePerRPCToken(endpoint, uid, password, creds)(context.Background())
+	client, err := client.NewGenericClient(endpoint,
+		client.WithGrpcOption(grpc.WithTransportCredentials(creds)),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return token
+
+	res, err := client.Authn.LoginUser(
+		context.Background(), &pb.LoginUserRequest{UserId: uid, Password: password},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return res.AccessToken
 }
 
 func Example_passTokenInCtx() {
 	// Create a new D1 Generic client which fetches the token from the context on each request
 	client, err := client.NewGenericClient(endpoint,
-		client.WithTransportCredentials(creds),
-		client.WithPerRPCCredentials(
-			client.PerRPCToken(func(ctx context.Context) (string, error) {
-				token, found := ctx.Value(tokenKey).(string)
-				if !found {
-					return "", fmt.Errorf("token not found in context")
-				}
-				return token, nil
-			}),
-		),
+		client.WithGrpcOption(grpc.WithTransportCredentials(creds)),
+		client.WithGrpcOption(grpc.WithPerRPCCredentials(perRPCToken{})),
 	)
 	if err != nil {
 		log.Fatal(err)
