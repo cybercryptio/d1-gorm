@@ -19,9 +19,10 @@ import (
 	"log"
 	"os"
 
-	client "github.com/cybercryptio/d1-client-go/d1-generic"
+	client "github.com/cybercryptio/d1-client-go/v2/d1-generic"
 	d1gorm "github.com/cybercryptio/d1-gorm"
 	"github.com/cybercryptio/d1-gorm/crypto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -43,10 +44,8 @@ type Person struct {
 func Example() {
 	// Create a new D1 Generic client
 	client, err := client.NewGenericClient(endpoint,
-		client.WithTransportCredentials(creds),
-		client.WithPerRPCCredentials(
-			client.NewStandalonePerRPCToken(endpoint, uid, password, creds),
-		),
+		client.WithGrpcOption(grpc.WithTransportCredentials(creds)),
+		client.WithTokenRefresh(uid, password),
 	)
 	if err != nil {
 		log.Fatal(err)

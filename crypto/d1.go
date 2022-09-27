@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	client "github.com/cybercryptio/d1-client-go/d1-generic"
-	pbgeneric "github.com/cybercryptio/d1-client-go/d1-generic/protobuf/generic"
+	client "github.com/cybercryptio/d1-client-go/v2/d1-generic"
+	pbgeneric "github.com/cybercryptio/d1-client-go/v2/d1-generic/protobuf/generic"
 )
 
 // Cryptor is an iterface that abstracts the encryption and decryption of data.
