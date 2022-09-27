@@ -1,5 +1,5 @@
-github.com/cybercryptio/d1-client-go/v2 v2.0.0-ci.17 h1:TUpEtifwyrIqsL4lbYhqpmZK17m/Defj0dtbZi4n8s4=
-github.com/cybercryptio/d1-client-go/v2 v2.0.0-ci.17/go.mod h1:ZV+CArvjAb1ZvDMRx3GFXCn1Z0xFSOjEtzpOBcWz8sg=
+github.com/cybercryptio/d1-client-go/v2 v2.0.0 h1:ReS2uF5COuZ7oPbMsAoR1wRkW6HYmU9fxBRcalIXb2k=
+github.com/cybercryptio/d1-client-go/v2 v2.0.0/go.mod h1:ZV+CArvjAb1ZvDMRx3GFXCn1Z0xFSOjEtzpOBcWz8sg=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
